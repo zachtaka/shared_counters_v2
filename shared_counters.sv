@@ -11,7 +11,9 @@ input integer new_counter_size;
 reg [1:0] mask_sub_command_in [n-1:0];
 
 reg valid_temp_load_data;
-
+reg [$clog2(n)-1:0]local_id;
+reg [$clog2(n)-1:0]temp_id;
+reg [n-1:0]load_en;
 // generate subcounters
 generate
 	genvar i;
@@ -20,7 +22,8 @@ generate
 						.clk(clk),
 						.sub_command_in(mask_sub_command_in[i]),
 						.load_data_in(data_in[i]),
-						.data_out(data_out[i])
+						.data_out(data_out[i]),
+						.load_en(load_en[i])
 						);
 	end
 endgenerate
@@ -56,15 +59,20 @@ reg [n-1:0] free;//na ginei reg
 reg [n-1:0] shift_mask,local_mask,or_local_mask;
 reg [n-1:0]  mask; //na ginei reg
 always @(*) begin //command or id or mask or free or subcounter_of_counter
-if (command==increment || command==deallocation || valid_temp_load_data || command==read) begin
-	shift_mask = (mask >>id+1);
-	local_mask= (shift_mask <<id+1);
+if (command==increment || command==deallocation || command==read || valid_temp_load_data) begin
+	if (valid_temp_load_data==1'b1) begin
+		local_id=temp_id;
+	end else begin
+		local_id = id;
+	end
+	shift_mask = (mask >>local_id+1);
+	local_mask= (shift_mask <<local_id+1);
 	for (int i =n-1; i>=0;i=i-1)begin
-		if (i<id) begin
+		if (i<local_id) begin
 			subcounter_of_counter[i]=1'b0;
-		end else if (i==id) begin
-			subcounter_of_counter[i]=1'b1;
-		end else if (i>id) begin
+		end else if (i==local_id) begin
+			subcounter_of_counter[i]=mask[i] && ~free[i];
+		end else if (i>local_id) begin
 			if (|local_mask==1'b1 || free[i]==1'b1) begin 		// na elenksw oti leitourgei kala me to free[i]
 				subcounter_of_counter[i]=1'b0;
 			end else begin
@@ -276,7 +284,6 @@ end
 reg [63:0] temp_load_data;
 input wire [63:0] load_data_in;
 input wire valid_load_data;
-reg [$clog2(n)-1:0]temp_id;
 always @(posedge clk or posedge rst) begin
 	if (command==load && valid_load_data==1'b1) begin
 		temp_load_data<=load_data_in;
@@ -288,12 +295,17 @@ always @(posedge clk or posedge rst) begin
 		temp_id<=0;
 	end
 end
+
 //internal load
 always @(*) begin
 	for (int i=0; i<n; i=i+1)begin
 		if (valid_temp_load_data==1'b1 && subcounter_of_counter[i]==1'b1) begin
-			data_in[i]<=temp_load_data[(i-temp_id)*g+:g];
-			sub_command_in[i]=2'b11;
+			data_in[i]=temp_load_data[(i-temp_id)*g+:g];
+			load_en[i]=1'b1;
+			//$display("data_in[%d]=%b",i,temp_load_data[(i-temp_id)*g+:g]);
+ 			$display("subcounter_of_counter=%b",subcounter_of_counter);
+		end else begin
+			load_en[i]=0;
 		end
 	end
 end

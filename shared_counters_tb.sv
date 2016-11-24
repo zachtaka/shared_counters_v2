@@ -42,7 +42,7 @@ end*/
 initial begin
 	file = $fopen("C:/Users/haris/Desktop/HDL_Books/verilog_projects/shared_counters/official/results.txt", "w") ;
 	file2 = $fopen("C:/Users/haris/Desktop/HDL_Books/verilog_projects/shared_counters/official/read_out.txt", "w") ;
-	//$fwrite (file, "Clock_Cycle \t Command \t data_out[9] \t data_out[8] \t data_out[7] \t data_out[6] \t data_out[5] \t data_out[4] \t data_out[3] \t data_out[2] \t data_out[1] \t data_out[0] \n");
+	$fwrite (file, "Clock_Cycle \t Command \t data_out[9] \t data_out[8] \t data_out[7] \t data_out[6] \t data_out[5] \t data_out[4] \t data_out[3] \t data_out[2] \t data_out[1] \t data_out[0] \n");
 	signals_initialize;
 	assert_reset;
 	deassert_reset;
@@ -64,9 +64,7 @@ initial begin
 	new__counter(4);
 	new__counter(2);
 
-	//deallocate counter with id 3,4
-	deallocate_counter(3);
-	deallocate_counter(4);
+	
 
 	//increment counter with id 0
 	increment_counter(0);
@@ -75,15 +73,26 @@ initial begin
 	set_system_idle;
 	#(ClockCycle*3)
 
-	//read counter
+	//read counter [0]
 	read_counter(0);
 	#(ClockCycle*5) //xreiazetai mono 3 kuklous vevaia
 	deassert_read;
 
+	deallocate_counter(4);
 	//load counter [0]
 	// default load data: 10101010_10101010_10101010_10101010_10101010_10101010_10101010_10101010
-	load_counter(0);
+	
+	increment_counter(4);
 
+	//read counter [0]
+	read_counter(0);
+	#(ClockCycle*5) //xreiazetai mono 3 kuklous vevaia
+	deassert_read;
+
+
+	//deallocate counter with id 3,4
+	// deallocate_counter(3);
+	// deallocate_counter(4);
 
 end
 
