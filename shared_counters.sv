@@ -1,15 +1,16 @@
 `include "subcounter.sv"
-module shared_counters(clk,rst,command_in,id,data_out,new_counter_size,allocation_id,valid_allocation_id,rdata_out,valid_data_out,last); //load_data_in #add_load
+module shared_counters(clk,rst,command_in,id,data_out,new_counter_size,allocation_id,valid_allocation_id,rdata_out,valid_data_out,last,load_data_in,valid_load_data); 
 input wire clk,rst;
 input wire [2:0]command_in;
 parameter n=10; //o arithmos twn subcounter
 parameter g=4; //o arithmos bits ana subcounter
 input wire [$clog2(n)-1:0]id;
 output reg [g-1:0] data_out[n-1:0];
-//reg [g-1:0] data_in[n-1:0]; #add_load
+reg [g-1:0] data_in[n-1:0];
 input integer new_counter_size;
 reg [1:0] mask_sub_command_in [n-1:0];
 
+reg valid_temp_load_data;
 
 // generate subcounters
 generate
@@ -18,7 +19,7 @@ generate
 		subcounter #(.granularity(g)) subcounter_i(
 						.clk(clk),
 						.sub_command_in(mask_sub_command_in[i]),
-						//.load_data_in(data_in[i]) #add_load
+						.load_data_in(data_in[i]),
 						.data_out(data_out[i])
 						);
 	end
@@ -49,15 +50,13 @@ end
 
 //subcounter command encode
 
-
-
 // subcounter_of_counter: dinei ena vector apo poious subcounter apoteleitai o counter(id)
 reg [n-1:0] subcounter_of_counter;
 reg [n-1:0] free;//na ginei reg
 reg [n-1:0] shift_mask,local_mask,or_local_mask;
 reg [n-1:0]  mask; //na ginei reg
 always @(*) begin //command or id or mask or free or subcounter_of_counter
-if (command==increment || command==deallocation || command==load || command==read) begin
+if (command==increment || command==deallocation || valid_temp_load_data || command==read) begin
 	shift_mask = (mask >>id+1);
 	local_mask= (shift_mask <<id+1);
 	for (int i =n-1; i>=0;i=i-1)begin
@@ -274,25 +273,16 @@ end
 
 //LOAD
 //external load
-/*reg [63:0] temp_load_data;
+reg [63:0] temp_load_data;
 input wire [63:0] load_data_in;
 input wire valid_load_data;
-reg valid_temp_load_data;
 reg [$clog2(n)-1:0]temp_id;
 always @(posedge clk or posedge rst) begin
-	if (rst) begin
-		cycle_counter<= 0;
-		temp_load_data<=0;
-		valid_temp_load_data<=0;
-		temp_id<=0;
-	end
-	else if ((command==load) && (valid_load_data==1'b1) begin
-		cycle_counter<= cycle_counter+1;
+	if (command==load && valid_load_data==1'b1) begin
 		temp_load_data<=load_data_in;
 		valid_temp_load_data<=1'b1;
 		temp_id<=id;
 	end else begin
-		cycle_counter<= 0;
 		temp_load_data<=0;
 		valid_temp_load_data<=0;
 		temp_id<=0;
@@ -300,14 +290,13 @@ always @(posedge clk or posedge rst) begin
 end
 //internal load
 always @(*) begin
-	if (valid_temp_load_data=1'b1) begin
-		for (int i=0;i<n;i=i+1)begin
-			if (subcounter_of_counter[i]==1'b1) begin
-				data_in[i]=temp_load_data[(i-temp_id)+:g]
-			end
+	for (int i=0; i<n; i=i+1)begin
+		if (valid_temp_load_data==1'b1 && subcounter_of_counter[i]==1'b1) begin
+			data_in[i]<=temp_load_data[(i-temp_id)*g+:g];
+			sub_command_in[i]=2'b11;
 		end
 	end
-end*/
+end
 
 
 // changed

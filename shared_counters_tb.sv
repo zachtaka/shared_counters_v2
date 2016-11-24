@@ -18,7 +18,8 @@ wire valid_allocation_id;
 wire [g-1:0] rdata_out;
 wire valid_data_out;
 wire last;
-
+reg [63:0] load_data_in;
+reg valid_load_data;
 // Commands decoding
 /*if(rst==1'b1) begin
 		command = reset;
@@ -79,6 +80,9 @@ initial begin
 	#(ClockCycle*5) //xreiazetai mono 3 kuklous vevaia
 	deassert_read;
 
+	//load counter [0]
+	// default load data: 10101010_10101010_10101010_10101010_10101010_10101010_10101010_10101010
+	load_counter(0);
 
 
 end
@@ -107,7 +111,7 @@ always @(*) begin
 
 always @(posedge clk) begin
 	ClkCycleCounter <=ClkCycleCounter+1;
-	if ((command==increment) ||(command==new_counter)) begin // for proper text alignment
+	if ((command==increment) ||(command==new_counter) || command ==load) begin // for proper text alignment
 		$fwrite(file,"%d\t\t%s[%d]\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t\n",ClkCycleCounter,command,id,data_out[9],data_out[8],data_out[7],data_out[6],data_out[5],data_out[4],data_out[3],data_out[2],data_out[1],data_out[0]);
 	end else if (command==read && valid_data_out==1'b1) begin
 		$fwrite(file2, "Cycle counter=%d  rdata_out=%b  last=%b\n",ClkCycleCounter, rdata_out,last);
@@ -140,7 +144,9 @@ shared_counters uut (
 	.valid_allocation_id(valid_allocation_id),
 	.rdata_out(rdata_out),
 	.valid_data_out(valid_data_out),
-	.last(last)
+	.last(last),
+	.load_data_in(load_data_in),
+	.valid_load_data(valid_load_data)
 
 	);
 
@@ -251,4 +257,25 @@ task deassert_read;
 		id=0;
 	end
 endtask
+
+
+task load_counter;
+	input integer counter_id;
+	begin
+		@(posedge clk);
+		id=counter_id;
+		command_in=3'b100;
+		load_data_in=64'b10101010_10101010_10101010_10101010_10101010_10101010_10101010_10101010;
+		valid_load_data=1'b1;
+		@(posedge clk);
+		id=0;
+		command_in=3'b000;
+		load_data_in=0;
+		valid_load_data=1'b0;	
+	end
+endtask
+
+
+
+
 endmodule
