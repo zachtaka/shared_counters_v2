@@ -44,55 +44,70 @@ initial begin
 	file2 = $fopen("C:/Users/haris/Desktop/HDL_Books/verilog_projects/shared_counters/official/read_out.txt", "w") ;
 	$fwrite (file, "Clock_Cycle \t Command \t data_out[9] \t data_out[8] \t data_out[7] \t data_out[6] \t data_out[5] \t data_out[4] \t data_out[3] \t data_out[2] \t data_out[1] \t data_out[0] \n");
 	signals_initialize;
-	assert_reset;
-	deassert_reset;
-	/*set_mask(0010001001);
-	set_free(1100000000);
-	increment_counter(3);
-	repeat (1000)begin
-		tick;
-	end
-	set_system_idle;
-	assert_reset;
-	deassert_reset;*/
-	//set_free(1_111_111_111);
+	reset_system;
+	
 
 
 	//setting some counters
+	// counter id's will be: 0,3,4,8
 	new__counter(3);
-	new__counter(1);
-	new__counter(4);
-	new__counter(2);
-
-	
+	// new__counter(1);
+	// new__counter(4);
+	// new__counter(2);
 
 	//increment counter with id 0
 	increment_counter(0);
-	#(ClockCycle*10000)
-
-	set_system_idle;
-	#(ClockCycle*3)
+	#(ClockCycle*6000)
 
 	//read counter [0]
+	// check read_out file
 	read_counter(0);
 	#(ClockCycle*5) //xreiazetai mono 3 kuklous vevaia
 	deassert_read;
 
+	// deallocate counter 4
+	// check console to see free and mask vectors
 	deallocate_counter(4);
-	//load counter [0]
+
+	// load counter [0]
 	// default load data: 10101010_10101010_10101010_10101010_10101010_10101010_10101010_10101010
-	
+	load_counter(0);
+
+	// trying illegal load to counter that doesnt exist anymore (4)
+	load_counter(4);
+
+	// trying illegal increment to counter that doesnt exist anymore (4)
 	increment_counter(4);
+	#(ClockCycle*4)
 
-	//read counter [0]
-	read_counter(0);
-	#(ClockCycle*5) //xreiazetai mono 3 kuklous vevaia
-	deassert_read;
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	//reset 
+	reset_system;
+
+	// setting some counters
+	// counter id's will be: 0,1,2,3,4,5,6,7
+	new__counter(1);
+	new__counter(1);
+	new__counter(1);
+	new__counter(1);
+	new__counter(1);
+	new__counter(1);
+	new__counter(1);
+	new__counter(1);
+
+	// diadoxika increments
+	increment_counter(0);
+	increment_counter(1);
+	increment_counter(2);
+	increment_counter(3);
+	increment_counter(4);
+	increment_counter(5);
+	increment_counter(6);
+	increment_counter(7);
 
 
-	//deallocate counter with id 3,4
-	// deallocate_counter(3);
-	// deallocate_counter(4);
+
+
 
 end
 
@@ -120,8 +135,10 @@ always @(*) begin
 
 always @(posedge clk) begin
 	ClkCycleCounter <=ClkCycleCounter+1;
-	if ((command==increment) ||(command==new_counter) || command ==load) begin // for proper text alignment
+	if ((command==increment)  || command ==load) begin // for proper text alignment
 		$fwrite(file,"%d\t\t%s[%d]\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t\n",ClkCycleCounter,command,id,data_out[9],data_out[8],data_out[7],data_out[6],data_out[5],data_out[4],data_out[3],data_out[2],data_out[1],data_out[0]);
+	end  else if (command==new_counter) begin
+		$fwrite(file,"%d\t\t%s\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t\n",ClkCycleCounter,command,data_out[9],data_out[8],data_out[7],data_out[6],data_out[5],data_out[4],data_out[3],data_out[2],data_out[1],data_out[0]);
 	end else if (command==read && valid_data_out==1'b1) begin
 		$fwrite(file2, "Cycle counter=%d  rdata_out=%b  last=%b\n",ClkCycleCounter, rdata_out,last);
 	end  else if (command==deallocation) begin
@@ -171,12 +188,14 @@ begin
 end
 endtask : signals_initialize
 
-task assert_reset;
+task reset_system;
 begin
 	@(posedge clk);
 	rst = 1'b1;
+	@(posedge clk);
+	rst = 1'b0;
 end
-endtask : assert_reset
+endtask : reset_system
 
 task deassert_reset;
 begin
@@ -204,6 +223,7 @@ endtask : tick
 task increment_counter;
 	input integer increment_id;
 	begin
+		@(posedge clk);
 		id=increment_id;
 		command_in=3'b001;
 	end
