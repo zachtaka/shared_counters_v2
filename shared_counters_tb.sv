@@ -10,7 +10,7 @@ reg [$clog2(n)-1:0] id;
 reg [2:0] command_in;
 reg [n-1:0] mask,free;
 wire  [g-1:0] data_out[n-1:0];
-integer file,file2;
+integer file,file2,file3;
 reg [31:0] new_counter_size;
 reg [20:0]ClkCycleCounter;
 wire [$clog2(n):0] allocation_id;
@@ -42,6 +42,7 @@ end*/
 initial begin
 	file = $fopen("C:/Users/haris/Desktop/HDL_Books/verilog_projects/shared_counters/official/results.txt", "w") ;
 	file2 = $fopen("C:/Users/haris/Desktop/HDL_Books/verilog_projects/shared_counters/official/read_out.txt", "w") ;
+	file3 = $fopen("C:/Users/haris/Desktop/HDL_Books/verilog_projects/shared_counters/official/allocations.txt", "w") ;
 	$fwrite (file, "Clock_Cycle \t Command \t data_out[9] \t data_out[8] \t data_out[7] \t data_out[6] \t data_out[5] \t data_out[4] \t data_out[3] \t data_out[2] \t data_out[1] \t data_out[0] \n");
 	signals_initialize;
 	reset_system;
@@ -51,9 +52,9 @@ initial begin
 	//setting some counters
 	// counter id's will be: 0,3,4,8
 	new__counter(3);
-	// new__counter(1);
-	// new__counter(4);
-	// new__counter(2);
+	new__counter(1);
+	new__counter(4);
+	new__counter(2);
 
 	//increment counter with id 0
 	increment_counter(0);
@@ -139,6 +140,7 @@ always @(posedge clk) begin
 		$fwrite(file,"%d\t\t%s[%d]\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t\n",ClkCycleCounter,command,id,data_out[9],data_out[8],data_out[7],data_out[6],data_out[5],data_out[4],data_out[3],data_out[2],data_out[1],data_out[0]);
 	end  else if (command==new_counter) begin
 		$fwrite(file,"%d\t\t%s\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t%b\t\t\n",ClkCycleCounter,command,data_out[9],data_out[8],data_out[7],data_out[6],data_out[5],data_out[4],data_out[3],data_out[2],data_out[1],data_out[0]);
+		
 	end else if (command==read && valid_data_out==1'b1) begin
 		$fwrite(file2, "Cycle counter=%d  rdata_out=%b  last=%b\n",ClkCycleCounter, rdata_out,last);
 	end  else if (command==deallocation) begin
@@ -149,7 +151,13 @@ always @(posedge clk) begin
 	
 end
 
+always @* begin
+	if (valid_allocation_id==1'b1) begin
+		$fwrite(file3,"allocation_id=%d \n valid_allocation_id=%b \n\n\n",allocation_id,valid_allocation_id);
+	
+	end
 
+end 
 
 
 

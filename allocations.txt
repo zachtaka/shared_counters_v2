@@ -1,0 +1,48 @@
+allocation_id= 0 
+ valid_allocation_id=1 
+
+
+allocation_id= 3 
+ valid_allocation_id=1 
+
+
+allocation_id= 4 
+ valid_allocation_id=1 
+
+
+allocation_id= 8 
+ valid_allocation_id=1 
+
+
+allocation_id= 0 
+ valid_allocation_id=1 
+
+
+allocation_id= 1 
+ valid_allocation_id=1 
+
+
+allocation_id= 2 
+ valid_allocation_id=1 
+
+
+allocation_id= 3 
+ valid_allocation_id=1 
+
+
+allocation_id= 4 
+ valid_allocation_id=1 
+
+
+allocation_id= 5 
+ valid_allocation_id=1 
+
+
+allocation_id= 6 
+ valid_allocation_id=1 
+
+
+allocation_id= 7 
+ valid_allocation_id=1 
+
+
